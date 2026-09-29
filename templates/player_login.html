@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Player Login{% endblock %}
+
+{% block content %}
+<div class="card narrow login-card">
+  <h1>Player Login</h1>
+  <p class="muted">Log in to play the Word Guess Game.</p>
+  <form method="POST">
+    <label for="username">Username</label>
+    <input
+      type="text"
+      id="username"
+      name="username"
+      required
+      autofocus
+    >
+    <label for="password">Password</label>
+    <input
+      type="password"
+      id="password"
+      name="password"
+      required
+    >
+    <button type="submit" class="btn">Player Login</button>
+  </form>
+  <p class="muted">
+    Don't have an account?
+    <a href="{{ url_for('register') }}">Register here</a>
+  </p>
+  <p class="login-switch">
+    Are you an administrator?
+    <a href="{{ url_for('admin_login') }}">Admin Login</a>
+  </p>
+</div>
+{% endblock %}

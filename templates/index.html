@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome{% endblock %}
+
+{% block content %}
+<div class="role-selection">
+  <div class="card role-card">
+    <div class="role-icon">🎮</div>
+    <h1>Player</h1>
+    <p class="muted">
+      Play the Word Guess Game and test your word skills.
+    </p>
+    <a href="{{ url_for('login') }}" class="btn role-btn">
+      Player Login
+    </a>
+    <p class="muted">
+      New player?
+      <a href="{{ url_for('register') }}">Create an account</a>
+    </p>
+  </div>
+  <div class="card role-card">
+    <div class="role-icon">⚙️</div>
+    <h1>Administrator</h1>
+    <p class="muted">
+      Access the dashboard, reports, and user activity.
+    </p>
+    <a href="{{ url_for('admin_login') }}" class="btn role-btn">
+      Admin Login
+    </a>
+  </div>
+</div>
+{% endblock %}

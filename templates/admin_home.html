@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Admin{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Admin Dashboard</h1>
+  <p class="muted">Welcome, {{ current_user.username }}.</p>
+  <ul class="admin-links">
+    <li><a href="{{ url_for('admin_daily_report') }}">Daily Report</a> — users active and correct guesses for a given day</li>
+    <li><a href="{{ url_for('admin_user_report') }}">User Report</a> — words tried and correct guesses per date for a specific user</li>
+  </ul>
+</div>
+{% endblock %}

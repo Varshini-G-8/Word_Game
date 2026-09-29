@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+
+{% block title %}Play{% endblock %}
+
+{% block content %}
+
+<div class="game-page">
+  <section class="game-card card">
+    <div class="game-header">
+      <div>
+        <h1>Guess the Word</h1>
+        <p class="muted">
+          Words played today:
+          <strong>{{ played_today }} / {{ max_words_per_day }}</strong>
+        </p>
+      </div>
+    </div>
+    {% if not round and not can_start_new %}
+      <div class="notice">
+        You've used all {{ max_words_per_day }} word attempts for today.
+        Come back tomorrow!
+      </div>
+    {% endif %}
+    {% if not round and can_start_new %}
+      <div class="start-section">
+        <p>
+          Ready to test your word skills?
+        </p>
+        <form method="POST" action="{{ url_for('start_round') }}">
+          <button type="submit" class="btn">
+            Start New Word
+          </button>
+        </form>
+      </div>
+    {% endif %}
+    {% if round %}
+      <div
+        id="board"
+        data-max-guesses="{{ max_guesses }}"
+      >
+        {% for g in round.guesses %}
+          <div class="guess-row">
+            {% for letter, color in zip_letters(g.guess_text, g.result_pattern) %}
+              <div class="tile {{ color }}">
+                {{ letter }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endfor %}
+      </div>
+      {% if round.status == "in_progress" %}
+        <form
+          id="guess-form"
+          autocomplete="off"
+        >
+          <input
+            type="text"
+            id="guess-input"
+            maxlength="5"
+            placeholder="ENTER 5-LETTER WORD"
+            style="text-transform: uppercase;"
+            required
+          >
+          <button
+            type="submit"
+            class="btn"
+          >
+            Submit Guess
+          </button>
+        </form>
+        <p
+          class="muted guesses-status"
+          id="guesses-left"
+        >
+          Guesses used:
+          {{ round.guesses|length }} / {{ max_guesses }}
+        </p>
+        <p
+          id="error-msg"
+          class="notice error-notice"
+          style="display:none;"
+        ></p>
+      {% else %}
+        <div class="round-finished">
+          {% if round.status == "won" %}
+            <div class="success-message">
+              🎉 You already won this word!
+            </div>
+          {% else %}
+            <div class="notice">
+              😕 You used all your guesses for this word.
+            </div>
+          {% endif %}
+          {% if can_start_new %}
+            <form
+              method="POST"
+              action="{{ url_for('start_round') }}"
+            >
+              <button
+                type="submit"
+                class="btn"
+              >
+                Play Next Word
+              </button>
+            </form>
+          {% endif %}
+        </div>
+      {% endif %}
+    {% endif %}
+  </section>
+
+  <aside class="rules-card">
+    <div class="rules-header">
+      <div class="rules-icon">
+        🎮
+      </div>
+      <h2>How to Play</h2>
+    </div>
+    <p class="rules-intro">
+      Guess the hidden
+      <strong>5-letter word</strong>
+      within
+      <strong>{{ max_guesses }} attempts</strong>.
+    </p>
+    <div class="rule-item">
+      <div class="example-tile green">
+        A
+      </div>
+      <div>
+        <strong>Correct</strong>
+        <span>
+          The letter is correct and in the correct position.
+        </span>
+      </div>
+    </div>
+
+    <div class="rule-item">
+      <div class="example-tile orange">
+        A
+      </div>
+      <div>
+        <strong>Wrong position</strong>
+        <span>
+          The letter is in the word but in the wrong position.
+        </span>
+      </div>
+    </div>
+
+    <div class="rule-item">
+      <div class="example-tile grey">
+        A
+      </div>
+      <div>
+        <strong>Not in word</strong>
+        <span>
+          The letter does not appear in the word.
+        </span>
+      </div>
+    </div>
+    <div class="remember-section">
+      <h3>Remember</h3>
+      <ul>
+        <li>
+          Enter a valid 5-letter word.
+        </li>
+
+        <li>
+          You have {{ max_guesses }} attempts.
+        </li>
+
+        <li>
+          Use the colored tiles as clues.
+        </li>
+      </ul>
+    </div>
+  </aside>
+</div>
+
+<div
+  id="modal-overlay"
+  class="modal-overlay"
+  style="display:none;"
+>
+  <div class="modal">
+    <p id="modal-message"></p>
+    <button
+      id="modal-ok"
+      class="btn"
+    >
+      OK
+    </button>
+  </div>
+</div>
+<script>
+
+const form = document.getElementById("guess-form");
+
+if (form) {
+
+  const input =
+    document.getElementById("guess-input");
+
+  const board =
+    document.getElementById("board");
+
+  const errorMsg =
+    document.getElementById("error-msg");
+
+  const guessesLeft =
+    document.getElementById("guesses-left");
+
+  const maxGuesses =
+    parseInt(
+      board.dataset.maxGuesses,
+      10
+    );
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    errorMsg.style.display = "none";
+    const guess =
+      input.value
+        .trim()
+        .toUpperCase();
+
+    if (!/^[A-Z]{5}$/.test(guess)) {
+      errorMsg.textContent =
+        "Please enter a valid 5-letter word.";
+      errorMsg.style.display =
+        "block";
+      return;
+    }
+
+    const resp = await fetch(
+      "{{ url_for('submit_guess') }}",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type":
+            "application/x-www-form-urlencoded"
+        },
+        body:
+          "guess=" +
+          encodeURIComponent(guess)
+      }
+    );
+    const data =
+      await resp.json();
+
+    if (data.error) {
+      errorMsg.textContent =
+        data.error;
+      errorMsg.style.display =
+        "block";
+      return;
+    }
+    const row =
+      document.createElement("div");
+    row.className =
+      "guess-row";
+    data.pattern.forEach(
+      (color, i) => {
+        const tile =
+          document.createElement("div");
+        tile.className =
+          "tile " + color;
+        tile.textContent =
+          data.guess[i];
+        row.appendChild(tile);
+      }
+    );
+    board.appendChild(row);
+    input.value = "";
+    guessesLeft.textContent =
+      "Guesses used: " +
+      data.guess_number +
+      " / " +
+      maxGuesses;
+
+    if (data.game_over) {
+      form.style.display =
+        "none";
+      document.getElementById(
+        "modal-message"
+      ).textContent =
+        data.message;
+      document.getElementById(
+        "modal-overlay"
+      ).style.display =
+        "flex";
+    }
+  });
+
+  document.getElementById(
+    "modal-ok"
+  ).addEventListener(
+    "click",
+    () => {
+      window.location.reload();
+    }
+  );
+}
+</script>
+
+{% endblock %}
