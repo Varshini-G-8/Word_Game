@@ -102,10 +102,12 @@ wordle_game/
 │   └── style.css
 │
 └── templates/
-    ├── base.html
-    ├── player_login.html
-    ├── register.html
-    ├── game.html
-    ├── admin_home.html
     ├── admin_daily_report.html
-    └── admin_user_report.html
+    ├── admin_home.html
+    ├── admin_login.html
+    ├── admin_user_report.html
+    ├── base.html
+    ├── game.html
+    ├── index.html
+    ├── player_login.html
+    └── register.html
